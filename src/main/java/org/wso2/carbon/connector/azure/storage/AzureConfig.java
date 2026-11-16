@@ -93,6 +93,7 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
         String clientSecret = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.CLIENT_SECRET);
         String tenantId = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.TENANT_ID);
         String maxIdleTime = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.MAX_IDLE_TIME);
+        String maxLifeTime = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.MAX_LIFE_TIME);
 
         ConnectionConfiguration connectionConfig = new ConnectionConfiguration();
         connectionConfig.setConnectionName(connectionName);
@@ -102,25 +103,33 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
         connectionConfig.setClientID(clientId);
         connectionConfig.setClientSecret(clientSecret);
         connectionConfig.setTenantID(tenantId);
-        if (StringUtils.isNotBlank(maxIdleTime)) {
-            connectionConfig.setMaxIdleTime(parseMaxIdleTime(maxIdleTime.trim()));
-        }
+        connectionConfig.setMaxIdleTime(parseDurationInMillis(AzureConstants.MAX_IDLE_TIME, maxIdleTime));
+        connectionConfig.setMaxLifeTime(parseDurationInMillis(AzureConstants.MAX_LIFE_TIME, maxLifeTime));
         return connectionConfig;
     }
 
-    private Duration parseMaxIdleTime(String maxIdleTime) throws InvalidConfigurationException {
+    /**
+     * Parses an optional duration parameter given in milliseconds.
+     *
+     * @return the duration, or null if the parameter is not set
+     * @throws InvalidConfigurationException if the value is not a positive whole number
+     */
+    static Duration parseDurationInMillis(String parameterName, String value) throws InvalidConfigurationException {
 
-        long maxIdleTimeMillis;
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        long millis;
         try {
-            maxIdleTimeMillis = Long.parseLong(maxIdleTime);
+            millis = Long.parseLong(value.trim());
         } catch (NumberFormatException e) {
-            throw new InvalidConfigurationException("Invalid value for maxIdleTime: " + maxIdleTime
+            throw new InvalidConfigurationException("Invalid value for '" + parameterName + "': " + value
                     + ". It should be a positive number of milliseconds.");
         }
-        if (maxIdleTimeMillis <= 0) {
-            throw new InvalidConfigurationException("Invalid value for maxIdleTime: " + maxIdleTime
+        if (millis <= 0) {
+            throw new InvalidConfigurationException("Invalid value for '" + parameterName + "': " + value
                     + ". It should be a positive number of milliseconds.");
         }
-        return Duration.ofMillis(maxIdleTimeMillis);
+        return Duration.ofMillis(millis);
     }
 }

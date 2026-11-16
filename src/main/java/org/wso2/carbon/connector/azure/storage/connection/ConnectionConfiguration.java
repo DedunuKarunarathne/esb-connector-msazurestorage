@@ -34,6 +34,7 @@ public class ConnectionConfiguration {
     private String tenantID;
     private String endpointProtocol;
     private Duration maxIdleTime;
+    private Duration maxLifeTime;
 
     public String getConnectionName() {
 
@@ -121,7 +122,8 @@ public class ConnectionConfiguration {
                     StringUtils.equals(this.clientSecret, connectionConfiguration.getClientSecret()) &&
                     StringUtils.equals(this.tenantID, connectionConfiguration.getTenantID()) &&
                     StringUtils.equals(this.endpointProtocol, connectionConfiguration.getEndpointProtocol()) &&
-                    Objects.equals(this.maxIdleTime, connectionConfiguration.getMaxIdleTime());
+                    Objects.equals(this.maxIdleTime, connectionConfiguration.getMaxIdleTime()) &&
+                    Objects.equals(this.maxLifeTime, connectionConfiguration.getMaxLifeTime());
         }
         return false;
     }
@@ -130,7 +132,7 @@ public class ConnectionConfiguration {
     public int hashCode() {
 
         return Objects.hash(this.connectionName, this.accountName, this.accountKey, this.clientID, this.clientSecret,
-                this.tenantID, this.endpointProtocol, this.maxIdleTime);
+                this.tenantID, this.endpointProtocol, this.maxIdleTime, this.maxLifeTime);
     }
 
     public Duration getMaxIdleTime() {
@@ -141,5 +143,24 @@ public class ConnectionConfiguration {
     public void setMaxIdleTime(Duration maxIdleTime) {
 
         this.maxIdleTime = maxIdleTime;
+    }
+
+    public Duration getMaxLifeTime() {
+
+        return maxLifeTime;
+    }
+
+    public void setMaxLifeTime(Duration maxLifeTime) {
+
+        this.maxLifeTime = maxLifeTime;
+    }
+
+    /**
+     * @return true if any connection pool parameter is configured, in which case a dedicated connection pool is used
+     * for this connection instead of the shared default Reactor Netty pool.
+     */
+    public boolean isConnectionPoolConfigured() {
+
+        return maxIdleTime != null || maxLifeTime != null;
     }
 }

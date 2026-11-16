@@ -46,7 +46,22 @@
         <skip-tests>true</skip-tests>
         <gson.version>2.10.1</gson.version>
         <azure.netty.version>1.13.5</azure.netty.version>
+        <!-- Version used by azure-core-http-netty ${azure.netty.version} -->
+        <reactor.netty.version>1.0.33</reactor.netty.version>
+        <!-- Version used by the Azure SDK -->
+        <slf4j.version>1.7.36</slf4j.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Integration test dependencies bring older slf4j-api versions, which break the Azure SDK in tests -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -212,6 +227,11 @@
             <version>${azure.netty.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-core</artifactId>
+            <version>${reactor.netty.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-nhttp-transport</artifactId>
             <version>${synapse.version}</version>
@@ -323,6 +343,35 @@
                     <workingDirectory>${basedir}/target</workingDirectory>
                     <skipTests>${skip-tests}</skipTests>
                 </configuration>
+                <executions>
+                    <!-- Unit tests, run on every build -->
+                    <execution>
+                        <id>unit-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>-Xms256m -Xmx512m</argLine>
+                            <skipTests>false</skipTests>
+                            <testFailureIgnore>false</testFailureIgnore>
+                            <suiteXmlFiles combine.self="override">
+                                <suiteXmlFile>src/test/resources/testng-unit.xml</suiteXmlFile>
+                            </suiteXmlFiles>
+                            <workingDirectory>${basedir}</workingDirectory>
+                            <!-- Integration test jars that bundle old slf4j or Jackson classes -->
+                            <classpathDependencyExcludes>
+                                <classpathDependencyExclude>org.apache.activemq:activemq-all</classpathDependencyExclude>
+                                <classpathDependencyExclude>org.ops4j.pax.logging:pax-logging-api</classpathDependencyExclude>
+                                <classpathDependencyExclude>org.slf4j:slf4j-jdk14</classpathDependencyExclude>
+                                <classpathDependencyExclude>slf4j.wso2:slf4j</classpathDependencyExclude>
+                                <classpathDependencyExclude>org.wso2.orbit.com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                                <classpathDependencyExclude>org.wso2.orbit.com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                                <classpathDependencyExclude>org.wso2.orbit.com.hazelcast:hazelcast</classpathDependencyExclude>
+                            </classpathDependencyExcludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
