@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.connector.azure.storage;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -31,6 +32,8 @@ import org.wso2.carbon.connector.core.AbstractConnector;
 import org.wso2.carbon.connector.core.ConnectException;
 import org.wso2.carbon.connector.core.connection.ConnectionHandler;
 import org.wso2.carbon.connector.core.util.ConnectorUtils;
+
+import java.time.Duration;
 
 /**
  * This class is for reading connector init params and initializing AzureStorageConnectionHandler.
@@ -89,6 +92,7 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
         String clientId = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.CLIENT_ID);
         String clientSecret = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.CLIENT_SECRET);
         String tenantId = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.TENANT_ID);
+        String maxIdleTime = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.MAX_IDLE_TIME);
 
         ConnectionConfiguration connectionConfig = new ConnectionConfiguration();
         connectionConfig.setConnectionName(connectionName);
@@ -98,6 +102,25 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
         connectionConfig.setClientID(clientId);
         connectionConfig.setClientSecret(clientSecret);
         connectionConfig.setTenantID(tenantId);
+        if (StringUtils.isNotBlank(maxIdleTime)) {
+            connectionConfig.setMaxIdleTime(parseMaxIdleTime(maxIdleTime.trim()));
+        }
         return connectionConfig;
+    }
+
+    private Duration parseMaxIdleTime(String maxIdleTime) throws InvalidConfigurationException {
+
+        long maxIdleTimeMillis;
+        try {
+            maxIdleTimeMillis = Long.parseLong(maxIdleTime);
+        } catch (NumberFormatException e) {
+            throw new InvalidConfigurationException("Invalid value for maxIdleTime: " + maxIdleTime
+                    + ". It should be a positive number of milliseconds.");
+        }
+        if (maxIdleTimeMillis <= 0) {
+            throw new InvalidConfigurationException("Invalid value for maxIdleTime: " + maxIdleTime
+                    + ". It should be a positive number of milliseconds.");
+        }
+        return Duration.ofMillis(maxIdleTimeMillis);
     }
 }

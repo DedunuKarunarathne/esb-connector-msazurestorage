@@ -27,6 +27,7 @@ public class AzureConstants {
     public static final String CLIENT_ID = "clientId";
     public static final String CLIENT_SECRET = "clientSecret";
     public static final String TENANT_ID = "tenantId";
+    public static final String MAX_IDLE_TIME = "maxIdleTime";
     public static final String ACCOUNT_KEY = "accountKey";
     public static final String PROTOCOL = "defaultEndpointsProtocol";
     public static final String DEFAULT_PROTOCOL = "http";

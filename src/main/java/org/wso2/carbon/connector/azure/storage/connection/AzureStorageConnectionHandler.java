@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.connector.azure.storage.connection;
 
+import com.azure.core.http.HttpClient;
 import com.azure.core.http.netty.NettyAsyncHttpClientBuilder;
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
@@ -29,11 +30,17 @@ import org.wso2.carbon.connector.azure.storage.util.AzureConstants;
 import org.wso2.carbon.connector.azure.storage.util.AzureUtil;
 import org.wso2.carbon.connector.core.ConnectException;
 import org.wso2.carbon.connector.core.connection.Connection;
+import reactor.netty.resources.ConnectionProvider;
+
+import java.time.Duration;
 
 public class AzureStorageConnectionHandler implements Connection {
 
+    private static final String CONNECTION_PROVIDER_PREFIX = "azure-storage-";
+
     private ConnectionConfiguration connectionConfig;
     private BlobServiceClient blobServiceClient;
+    private ConnectionProvider connectionProvider;
 
     public AzureStorageConnectionHandler(ConnectionConfiguration fsConfig) {
 
@@ -73,24 +80,51 @@ public class AzureStorageConnectionHandler implements Connection {
 
         if (StringUtils.isNotEmpty(clientId) && StringUtils.isNotEmpty(clientSecret)
                 && StringUtils.isNotEmpty(tenantId) && StringUtils.isNotEmpty(accountName)) {
+            HttpClient httpClient = createHttpClient(config);
             ClientSecretCredential credential = new ClientSecretCredentialBuilder()
-                    .httpClient(new NettyAsyncHttpClientBuilder().build())
+                    .httpClient(httpClient)
                     .clientId(clientId)
                     .clientSecret(clientSecret)
                     .tenantId(tenantId)
                     .build();
             return new BlobServiceClientBuilder()
-                    .httpClient(new NettyAsyncHttpClientBuilder().build())
+                    .httpClient(httpClient)
                     .credential(credential)
                     .endpoint(AzureConstants.HTTPS_PROTOCOL + accountName + AzureConstants.BLOB_ENDPOINT_SUFFIX)
                     .buildClient();
         } else if (StringUtils.isNotEmpty(accountName) && StringUtils.isNotEmpty(accountKey)) {
             return new BlobServiceClientBuilder()
-                    .httpClient(new NettyAsyncHttpClientBuilder().build())
+                    .httpClient(createHttpClient(config))
                     .connectionString(AzureUtil.getStorageConnectionString(accountName, accountKey, endpointProtocol))
                     .buildClient();
         } else {
             throw new InvalidConfigurationException("Missing authentication parameters.");
+        }
+    }
+
+    /**
+     * Creates the HTTP client. A dedicated connection pool is used only when maxIdleTime is configured, so that idle
+     * connections are evicted before an intermediary (e.g. a load balancer) drops them. Otherwise the default shared
+     * Reactor Netty pool is used, as before.
+     */
+    private HttpClient createHttpClient(ConnectionConfiguration config) {
+
+        disposeConnectionProvider();
+        Duration maxIdleTime = config.getMaxIdleTime();
+        if (maxIdleTime == null) {
+            return new NettyAsyncHttpClientBuilder().build();
+        }
+        connectionProvider = ConnectionProvider.builder(CONNECTION_PROVIDER_PREFIX + config.getConnectionName())
+                .maxIdleTime(maxIdleTime)
+                .build();
+        return new NettyAsyncHttpClientBuilder().connectionProvider(connectionProvider).build();
+    }
+
+    private void disposeConnectionProvider() {
+
+        if (connectionProvider != null) {
+            connectionProvider.dispose();
+            connectionProvider = null;
         }
     }
 }
