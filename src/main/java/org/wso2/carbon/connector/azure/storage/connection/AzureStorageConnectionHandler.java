@@ -41,6 +41,9 @@ public class AzureStorageConnectionHandler implements Connection {
     private static final Log LOG = LogFactory.getLog(AzureStorageConnectionHandler.class);
     private static final String CONNECTION_PROVIDER_PREFIX = "azure-storage-";
     private static final Duration MIN_EVICTION_INTERVAL = Duration.ofSeconds(1);
+    // Same limits as the shared Reactor Netty pool, so that a dedicated pool does not reduce capacity.
+    static final int MAX_CONNECTIONS = 500;
+    private static final int MAX_PENDING_ACQUIRES = 1000;
 
     // Read without locking; written only while holding the lock on this handler.
     private volatile ConnectionConfiguration connectionConfig;
@@ -199,7 +202,9 @@ public class AzureStorageConnectionHandler implements Connection {
             return null;
         }
         String poolName = poolName(config);
-        ConnectionProvider.Builder builder = ConnectionProvider.builder(poolName);
+        ConnectionProvider.Builder builder = ConnectionProvider.builder(poolName)
+                .maxConnections(MAX_CONNECTIONS)
+                .pendingAcquireMaxCount(MAX_PENDING_ACQUIRES);
         Duration maxIdleTime = config.getMaxIdleTime();
         Duration maxLifeTime = config.getMaxLifeTime();
         if (maxIdleTime != null) {

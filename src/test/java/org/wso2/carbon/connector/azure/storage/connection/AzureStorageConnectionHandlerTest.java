@@ -58,6 +58,8 @@ public class AzureStorageConnectionHandlerTest {
         TrackingHandler idleOnly = new TrackingHandler(config(10000L, null, "http"));
         idleOnly.getBlobServiceClient();
         Assert.assertSame(idleOnly.getConnectionProvider(), idleOnly.createdProviders().get(0));
+        Assert.assertEquals(idleOnly.getConnectionProvider().maxConnections(),
+                AzureStorageConnectionHandler.MAX_CONNECTIONS);
 
         TrackingHandler lifeOnly = new TrackingHandler(config(null, 10000L, "http"));
         lifeOnly.getBlobServiceClient();
