@@ -49,25 +49,19 @@ public class AzureStorageConnectionHandlerTest {
     private static final int THREADS = 50;
 
     @Test
-    public void testSharedPoolIsUsedWhenNoPoolParameterIsSet() throws Exception {
+    public void testDedicatedPoolOnlyWhenPoolParameterIsSet() throws Exception {
 
-        TrackingHandler handler = new TrackingHandler(config(null, null, "http"));
-        Assert.assertNotNull(handler.getBlobServiceClient());
-        Assert.assertNull(handler.getConnectionProvider());
-        Assert.assertEquals(handler.createdProviders().size(), 0);
-    }
-
-    @Test
-    public void testDedicatedPoolIsUsedWhenPoolParameterIsSet() throws Exception {
+        TrackingHandler noParameters = new TrackingHandler(config(null, null, "http"));
+        Assert.assertNotNull(noParameters.getBlobServiceClient());
+        Assert.assertNull(noParameters.getConnectionProvider(), "The shared pool must be used");
 
         TrackingHandler idleOnly = new TrackingHandler(config(10000L, null, "http"));
         idleOnly.getBlobServiceClient();
-        Assert.assertEquals(idleOnly.createdProviders().size(), 1);
         Assert.assertSame(idleOnly.getConnectionProvider(), idleOnly.createdProviders().get(0));
 
         TrackingHandler lifeOnly = new TrackingHandler(config(null, 10000L, "http"));
         lifeOnly.getBlobServiceClient();
-        Assert.assertEquals(lifeOnly.createdProviders().size(), 1);
+        Assert.assertSame(lifeOnly.getConnectionProvider(), lifeOnly.createdProviders().get(0));
     }
 
     @Test

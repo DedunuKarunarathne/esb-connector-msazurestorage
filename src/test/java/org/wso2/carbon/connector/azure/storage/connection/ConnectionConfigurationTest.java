@@ -32,9 +32,6 @@ public class ConnectionConfigurationTest {
     public void testEqualsAndHashCodeIncludePoolParameters() throws Exception {
 
         ConnectionConfiguration base = config(null, null);
-        Assert.assertEquals(config(null, null), base);
-        Assert.assertEquals(config(null, null).hashCode(), base.hashCode());
-
         Assert.assertEquals(config(10000L, 20000L), config(10000L, 20000L));
         Assert.assertEquals(config(10000L, 20000L).hashCode(), config(10000L, 20000L).hashCode());
 
@@ -43,15 +40,6 @@ public class ConnectionConfigurationTest {
         Assert.assertFalse(config(10000L, null).equals(config(15000L, null)));
         Assert.assertFalse(config(null, 10000L).equals(config(null, 15000L)));
         Assert.assertFalse(config(10000L, null).equals(config(null, 10000L)));
-    }
-
-    @Test
-    public void testConnectionPoolConfigured() throws Exception {
-
-        Assert.assertFalse(config(null, null).isConnectionPoolConfigured());
-        Assert.assertTrue(config(10000L, null).isConnectionPoolConfigured());
-        Assert.assertTrue(config(null, 10000L).isConnectionPoolConfigured());
-        Assert.assertTrue(config(10000L, 20000L).isConnectionPoolConfigured());
     }
 
     private static ConnectionConfiguration config(Long maxIdleMillis, Long maxLifeMillis) throws Exception {

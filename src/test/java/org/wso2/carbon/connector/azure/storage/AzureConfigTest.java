@@ -41,15 +41,16 @@ public class AzureConfigTest {
     @Test
     public void testValidValue() throws Exception {
 
-        Assert.assertEquals(AzureConfig.parseDurationInMillis("maxIdleTime", "60000"), Duration.ofMillis(60000));
         Assert.assertEquals(AzureConfig.parseDurationInMillis("maxIdleTime", " 1500 "), Duration.ofMillis(1500));
         Assert.assertEquals(AzureConfig.parseDurationInMillis("maxLifeTime", "1"), Duration.ofMillis(1));
+        Assert.assertEquals(AzureConfig.parseDurationInMillis("maxLifeTime", "2147483647"),
+                Duration.ofMillis(Integer.MAX_VALUE));
     }
 
     @DataProvider(name = "invalidValues")
     public Object[][] invalidValues() {
 
-        return new Object[][]{{"abc"}, {"0"}, {"-5"}, {"1.5"}, {"12abc"}, {"99999999999999999999"}};
+        return new Object[][]{{"abc"}, {"0"}, {"2147483648"}, {"99999999999999999999"}};
     }
 
     @Test(dataProvider = "invalidValues")

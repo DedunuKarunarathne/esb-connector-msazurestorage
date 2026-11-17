@@ -117,7 +117,7 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
      * Parses an optional duration parameter given in milliseconds.
      *
      * @return the duration, or null if the parameter is not set
-     * @throws InvalidConfigurationException if the value is not a positive whole number
+     * @throws InvalidConfigurationException if the value is not a whole number between 1 and Integer.MAX_VALUE
      */
     static Duration parseDurationInMillis(String parameterName, String value) throws InvalidConfigurationException {
 
@@ -128,12 +128,12 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
         try {
             millis = Long.parseLong(value.trim());
         } catch (NumberFormatException e) {
-            throw new InvalidConfigurationException("Invalid value for '" + parameterName + "': " + value
-                    + ". It should be a positive number of milliseconds.");
+            millis = -1;
         }
-        if (millis <= 0) {
+        // Reactor Netty overflows with very large durations, so the value is limited to about 24.8 days.
+        if (millis <= 0 || millis > Integer.MAX_VALUE) {
             throw new InvalidConfigurationException("Invalid value for '" + parameterName + "': " + value
-                    + ". It should be a positive number of milliseconds.");
+                    + ". It should be a number of milliseconds between 1 and " + Integer.MAX_VALUE + ".");
         }
         return Duration.ofMillis(millis);
     }
