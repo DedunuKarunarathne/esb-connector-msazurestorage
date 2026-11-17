@@ -23,6 +23,7 @@
             <class name="org.wso2.carbon.connector.azure.storage.AzureConfigTest"/>
             <class name="org.wso2.carbon.connector.azure.storage.connection.ConnectionConfigurationTest"/>
             <class name="org.wso2.carbon.connector.azure.storage.connection.AzureStorageConnectionHandlerTest"/>
+            <class name="org.wso2.carbon.connector.azure.storage.connection.ConnectorUndeployObserverTest"/>
         </classes>
     </test>
 </suite>

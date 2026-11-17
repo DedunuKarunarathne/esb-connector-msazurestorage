@@ -21,9 +21,11 @@ package org.wso2.carbon.connector.azure.storage;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.wso2.carbon.connector.azure.storage.connection.AzureStorageConnectionHandler;
 import org.wso2.carbon.connector.azure.storage.connection.ConnectionConfiguration;
+import org.wso2.carbon.connector.azure.storage.connection.ConnectorUndeployObserver;
 import org.wso2.carbon.connector.azure.storage.exceptions.InvalidConfigurationException;
 import org.wso2.carbon.connector.azure.storage.util.AzureConstants;
 import org.wso2.carbon.connector.azure.storage.util.AzureUtil;
@@ -42,7 +44,10 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
 
     @Override
     public void init(SynapseEnvironment synapseEnvironment) {
-        // Do nothing on deployment - configs unknown by that time
+
+        // Connection configs are read in connect(). Close the connections when the connector is undeployed.
+        SynapseConfiguration synapseConfiguration = synapseEnvironment.getSynapseConfiguration();
+        synapseConfiguration.registerObserver(new ConnectorUndeployObserver(synapseConfiguration));
     }
 
     @Override
