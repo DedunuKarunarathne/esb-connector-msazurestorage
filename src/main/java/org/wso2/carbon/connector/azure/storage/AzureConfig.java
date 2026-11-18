@@ -18,11 +18,14 @@
 
 package org.wso2.carbon.connector.azure.storage;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.wso2.carbon.connector.azure.storage.connection.AzureStorageConnectionHandler;
 import org.wso2.carbon.connector.azure.storage.connection.ConnectionConfiguration;
+import org.wso2.carbon.connector.azure.storage.connection.ConnectorUndeployObserver;
 import org.wso2.carbon.connector.azure.storage.exceptions.InvalidConfigurationException;
 import org.wso2.carbon.connector.azure.storage.util.AzureConstants;
 import org.wso2.carbon.connector.azure.storage.util.AzureUtil;
@@ -32,6 +35,8 @@ import org.wso2.carbon.connector.core.ConnectException;
 import org.wso2.carbon.connector.core.connection.ConnectionHandler;
 import org.wso2.carbon.connector.core.util.ConnectorUtils;
 
+import java.time.Duration;
+
 /**
  * This class is for reading connector init params and initializing AzureStorageConnectionHandler.
  */
@@ -39,7 +44,10 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
 
     @Override
     public void init(SynapseEnvironment synapseEnvironment) {
-        // Do nothing on deployment - configs unknown by that time
+
+        // Connection configs are read in connect(). Close the connections when the connector is undeployed.
+        SynapseConfiguration synapseConfiguration = synapseEnvironment.getSynapseConfiguration();
+        synapseConfiguration.registerObserver(new ConnectorUndeployObserver(synapseConfiguration));
     }
 
     @Override
@@ -89,6 +97,8 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
         String clientId = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.CLIENT_ID);
         String clientSecret = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.CLIENT_SECRET);
         String tenantId = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.TENANT_ID);
+        String maxIdleTime = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.MAX_IDLE_TIME);
+        String maxLifeTime = (String) ConnectorUtils.lookupTemplateParamater(msgContext, AzureConstants.MAX_LIFE_TIME);
 
         ConnectionConfiguration connectionConfig = new ConnectionConfiguration();
         connectionConfig.setConnectionName(connectionName);
@@ -98,6 +108,33 @@ public class AzureConfig extends AbstractConnector implements ManagedLifecycle {
         connectionConfig.setClientID(clientId);
         connectionConfig.setClientSecret(clientSecret);
         connectionConfig.setTenantID(tenantId);
+        connectionConfig.setMaxIdleTime(parseDurationInMillis(AzureConstants.MAX_IDLE_TIME, maxIdleTime));
+        connectionConfig.setMaxLifeTime(parseDurationInMillis(AzureConstants.MAX_LIFE_TIME, maxLifeTime));
         return connectionConfig;
+    }
+
+    /**
+     * Parses an optional duration parameter given in milliseconds.
+     *
+     * @return the duration, or null if the parameter is not set
+     * @throws InvalidConfigurationException if the value is not a whole number between 1 and Integer.MAX_VALUE
+     */
+    static Duration parseDurationInMillis(String parameterName, String value) throws InvalidConfigurationException {
+
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        long millis;
+        try {
+            millis = Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            millis = -1;
+        }
+        // Reactor Netty overflows with very large durations, so the value is limited to about 24.8 days.
+        if (millis <= 0 || millis > Integer.MAX_VALUE) {
+            throw new InvalidConfigurationException("Invalid value for '" + parameterName + "': " + value
+                    + ". It should be a number of milliseconds between 1 and " + Integer.MAX_VALUE + ".");
+        }
+        return Duration.ofMillis(millis);
     }
 }

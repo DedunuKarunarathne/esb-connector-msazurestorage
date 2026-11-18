@@ -94,6 +94,36 @@
                 }
               ]
             }
+          },
+          {
+            "type": "attributeGroup",
+            "value": {
+              "groupName": "Connection Pool",
+              "elements": [
+                {
+                  "type": "attribute",
+                  "value": {
+                    "name": "maxIdleTime",
+                    "displayName": "Max Idle Time (ms)",
+                    "inputType": "stringOrExpression",
+                    "defaultValue": "",
+                    "required": "false",
+                    "helpTip": "Maximum time (in milliseconds) a pooled connection can remain idle before it is closed."
+                  }
+                },
+                {
+                  "type": "attribute",
+                  "value": {
+                    "name": "maxLifeTime",
+                    "displayName": "Max Life Time (ms)",
+                    "inputType": "stringOrExpression",
+                    "defaultValue": "",
+                    "required": "false",
+                    "helpTip": "Maximum time (in milliseconds) a pooled connection can remain open before it is closed."
+                  }
+                }
+              ]
+            }
           }
         ]
       }

@@ -24,6 +24,8 @@
 	<parameter name="clientId" description="The client ID of the application."/>
 	<parameter name="clientSecret" description="The client secret of the application."/>
 	<parameter name="tenantId" description="The tenant ID of the application."/>
+	<parameter name="maxIdleTime" description="Maximum time (in milliseconds) a pooled connection can remain idle before it is closed."/>
+	<parameter name="maxLifeTime" description="Maximum time (in milliseconds) a pooled connection can remain open before it is closed."/>
 	<sequence>
 		<property name="name" expression="$func:name"/>
 		<class name="org.wso2.carbon.connector.azure.storage.AzureConfig"/>
